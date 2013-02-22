@@ -1,16 +1,16 @@
-; Dan McArdle
-; CSCI 276 - Lisp
-; Connect Four!
-; 20 Feb. 2013
+;;; Dan McArdle
+;;; CSCI 276 - Lisp
+;;; Connect Four!
+;;; 20 Feb. 2013
 
-; _ _ _ _ _ _ _
-;| | | | | | | |     
-;| | | | | | | |     
-;| |0|1|1| | | |     
-;|0|1|1|1| | | |     
-;|1|1|0|0| | | |     
-;|1|0|0|1|0|0| |     
-;---------------
+;;;  _ _ _ _ _ _ _
+;;; | | | | | | | |     
+;;; | | | | | | | |     
+;;; | |0|1|1| | | |     
+;;; |0|1|1|1| | | |     
+;;; |1|1|0|0| | | |     
+;;; |1|0|0|1|0|0| |     
+;;; ---------------
 
 (defvar *player1Goes* t)
 (defvar *numRows* 6)
@@ -22,17 +22,16 @@
     (defun createRow (cols)
         (cond
             ((eq cols 0) NIL)
-            (T (append (createRow (- cols 1)) '(~)))))
+            (T (append (createRow (- cols 1)) (list '~ ) ))))
 
     (cond
         ((eq rows 0) NIL)
         (T (append (createBoard cols (- rows 1))  (list (createRow cols)) ))))
 
 (defun printRow (row)
-    "Print a single list like  | x0 | x1 | ... | xn |"
-
+    "Print a single list (x0 x1 ... xn) like  | x0 | x1 | ... | xn |"
     (cond
-        ((eq (length row) 0)
+        ((null row)
             (format t "|~%"))
         (t (progn
             (format t "| ~S " (car row))
@@ -51,26 +50,26 @@
                 (format t "~%")))))
 
 (defun makeMove (board colNum)
-    ;; adjust for numbers displayed to user starting at 1
-    (setf colNum (- colNum 1))
-    
-    ;; get column from board
-    (setf col
-        (reverse
-            (map 'list #'(lambda (row) (nth colNum row)) board)))
-    
-    ;; find highest empty element
-    (setf rowNum (position '~ col))
-
     ;; decide which symbol to use
     (setf sym (cond
         (*player1Goes* 'A)
         (t 'B)))
 
+    ;; adjust for numbers displayed to user starting at 1
+    (setf colNum (- colNum 1))
+    
+    ;; extract column from board
+    (setf col
+        (reverse
+            (map 'list #'(lambda (row) (nth colNum row)) board)))
+    
+    ;; find highest empty element in column
+    (setf rowNum (position '~ col))
 
     ;; set the value at the position
     (if (null rowNum)
         (progn
+            ;; if col is full, repeat without switching to other player's turn
             (format t "Column is full~%")
             (takeTurn board))
 
@@ -79,14 +78,43 @@
             (setf rowNum (- (- *numRows* rowNum) 1)) 
             (setf (nth colNum (nth rowNum board)) sym)))
 
+    ;; other player's turn now
     (setf *player1Goes* (not *player1Goes*)))
 
 
+
 (defun gameOver-p (board)
+    (defun checkList (l)
+        "checks a list of pieces for a group of four in a row"
+        (if (>= (length l) 4)
+            (progn
+                (setf seq (subseq l 0 4))
+                (or
+                    (equal seq '(A A A A))
+                    (equal seq '(B B B B))
+                    (checkList (cdr l))))))
+
     ;; check diagonal
+
     ;; check horizontal
+    (defun checkHorizontal (b)
+        "checks each row of board b"
+        (if (not (null b))
+            (or
+                (checkList (car b))
+                (checkHorizontal (cdr b)))))
+            
     ;; check vertical
-)
+    (defun checkVertical (b)
+        "checks each column of board b"
+        (if (not (null (car b)))
+            (or
+                (checkList (map 'list #'car b))
+                (checkVertical (map 'list #'cdr b))))) 
+
+    (or
+        (checkHorizontal board)
+        (checkVertical board)))
 
 
 (defun askUserForCol ()
@@ -95,7 +123,7 @@
   (if (and
         (numberp val)
         (> val 0)
-        (< val *numCols*))  val
+        (<= val *numCols*))  val
 
     ;; otherwise
        (progn
@@ -115,8 +143,18 @@
     (makeMove board colChoice)
 
     ;; recurse
-    (takeTurn board))
+    (cond
+        ((gameOver-p board)
+            (progn
+                (format t "~%~%GAME OVER, ")
+                (if *player1Goes*
+                    (format t "PLAYER 2 WINS~%")
+                    (format t "PLAYER 1 WINS~%"))
+                (printBoard board)))
+        (t (takeTurn board))))
 
 
+(format t "~%~%     LET THE GAMES BEGIN!!!!!!!!~%~%")
 (setf board (createBoard *numCols* *numRows*))
 (takeTurn board)
+
