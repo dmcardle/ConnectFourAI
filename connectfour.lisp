@@ -95,6 +95,22 @@
                     (checkList (cdr l))))))
 
     ;; check diagonal
+    (defun checkDiagonal (b)
+        (defun range (bot top)
+          "Generates a list of numbers in range [bot top) -- that is, bot is
+          included and top is excluded from the resulting list"
+          (loop for i from bot to (- top 1) collect i))
+
+        (if (and
+             (>= (length b) 4)
+             (>= (length (car b)) 4))
+                (or
+                    (checkList
+                        (map 'list #'(lambda (i) (nth i (nth i b))) (range 0 4)))
+                    (checkDiagonal (cdr b))
+                    (checkDiagonal (map 'list #'cdr b)))))
+
+            ;(map 'list #'(lambda (row) (nth colNum row)) board)))
 
     ;; check horizontal
     (defun checkHorizontal (b)
@@ -114,7 +130,9 @@
 
     (or
         (checkHorizontal board)
-        (checkVertical board)))
+        (checkVertical board)
+        (checkDiagonal board)
+        (checkDiagonal (map 'list #'reverse board))))
 
 
 (defun askUserForCol ()
