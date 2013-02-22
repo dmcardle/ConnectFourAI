@@ -16,6 +16,13 @@
 (defvar *numRows* 6)
 (defvar *numCols* 7)
 
+
+(defun range (bot top)
+    "Generates a list of numbers in range [bot top) -- that is, bot is
+    included and top is excluded from the resulting list"
+    (loop for i from bot to (- top 1) collect i))
+
+
 (defun createBoard (cols rows)
     "Create a list of `rows` lists containng `cols` elements each"
 
@@ -28,6 +35,7 @@
         ((eq rows 0) NIL)
         (T (append (createBoard cols (- rows 1))  (list (createRow cols)) ))))
 
+
 (defun printRow (row)
     "Print a single list (x0 x1 ... xn) like  | x0 | x1 | ... | xn |"
     (cond
@@ -36,6 +44,7 @@
         (t (progn
             (format t "| ~S " (car row))
             (printRow (cdr row))))))
+
 
 (defun printBoard (board)
     "Print the whole board out using `printRow`"
@@ -49,11 +58,12 @@
                 (printRow (list 1 2 3 4 5 6 7) )
                 (format t "~%")))))
 
+
 (defun makeMove (board colNum)
     ;; decide which symbol to use
     (setf sym (cond
-        (*player1Goes* 'A)
-        (t 'B)))
+        (*player1Goes* 'X)
+        (t 'O)))
 
     ;; adjust for numbers displayed to user starting at 1
     (setf colNum (- colNum 1))
@@ -90,17 +100,12 @@
             (progn
                 (setf seq (subseq l 0 4))
                 (or
-                    (equal seq '(A A A A))
-                    (equal seq '(B B B B))
+                    (equal seq '(X X X X))
+                    (equal seq '(O O O O))
                     (checkList (cdr l))))))
 
-    ;; check diagonal
     (defun checkDiagonal (b)
-        (defun range (bot top)
-          "Generates a list of numbers in range [bot top) -- that is, bot is
-          included and top is excluded from the resulting list"
-          (loop for i from bot to (- top 1) collect i))
-
+        "checks all downward diagonals for groups of four"
         (if (and
              (>= (length b) 4)
              (>= (length (car b)) 4))
@@ -112,7 +117,6 @@
 
             ;(map 'list #'(lambda (row) (nth colNum row)) board)))
 
-    ;; check horizontal
     (defun checkHorizontal (b)
         "checks each row of board b"
         (if (not (null b))
@@ -120,7 +124,6 @@
                 (checkList (car b))
                 (checkHorizontal (cdr b)))))
             
-    ;; check vertical
     (defun checkVertical (b)
         "checks each column of board b"
         (if (not (null (car b)))
@@ -128,11 +131,28 @@
                 (checkList (map 'list #'car b))
                 (checkVertical (map 'list #'cdr b))))) 
 
-    (or
-        (checkHorizontal board)
-        (checkVertical board)
-        (checkDiagonal board)
-        (checkDiagonal (map 'list #'reverse board))))
+
+    (defun checkForDraw (b)
+        (if (not (null b))
+            (and
+                ;; if this row is full
+                (null (position '~ (car b)))
+                (checkForDraw (cdr b)))))
+
+
+    (cond
+        ((checkForDraw board) 'DRAW)
+        (t 
+
+            ;; check all types of winning conditions
+            (or
+                (checkHorizontal board)
+                (checkVertical board)
+                (checkDiagonal board)
+
+                ;; also check horizontally-flipped board so we catch the upward
+                ;; diagonals
+                (checkDiagonal (map 'list #'reverse board))))))
 
 
 (defun askUserForCol ()
