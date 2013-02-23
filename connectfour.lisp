@@ -92,8 +92,7 @@
     (setf *player1Goes* (not *player1Goes*)))
 
 
-
-(defun gameOver-p (board)
+(defun checkGameOver (board)
     (defun checkList (l)
         "checks a list of pieces for a group of four in a row"
         (if (>= (length l) 4)
@@ -133,11 +132,14 @@
 
 
     (defun checkForDraw (b)
-        (if (not (null b))
-            (and
-                ;; if this row is full
-                (null (position '~ (car b)))
-                (checkForDraw (cdr b)))))
+        "returns true if board is full"
+        (cond
+            ((not (null b))
+                (and
+                    ;; if this row is full
+                    (null (position '~ (car b)))
+                    (checkForDraw (cdr b))))
+            (t t)))
 
 
     (cond
@@ -173,16 +175,22 @@
     (format t
         (cond
             (*player1Goes*
-                "~%          PLAYER 1~%")
-            (t  "~%          PLAYER 2~%")))
+                "~%          PLAYER 1 (X)~%")
+            (t  "~%          PLAYER 2 (O)~%")))
 
     (printBoard board)
     (setf colChoice (askUserForCol))
     (makeMove board colChoice)
 
     ;; recurse
+    (setf gameStatus (checkGameOver board))
+
     (cond
-        ((gameOver-p board)
+        ((eq gameStatus 'DRAW)
+            (progn
+                (format t "~%~%DRAW: Nobody wins!~%~%"))
+                (printBoard board))
+        (gameStatus 
             (progn
                 (format t "~%~%GAME OVER, ")
                 (if *player1Goes*
@@ -192,7 +200,7 @@
         (t (takeTurn board))))
 
 
-(format t "~%~%     LET THE GAMES BEGIN!!!!!!!!~%~%")
+(format t "~%~%     LET THE GAMES BEGIN!~%~%")
 (setf board (createBoard *numCols* *numRows*))
 (takeTurn board)
 
