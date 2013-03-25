@@ -238,6 +238,8 @@
   ;;    plan for victory
   ;; 
   ;; TODO implement Victor Allis' rules for perfect play
+
+  ;; TODO make this check if the column is full
   (defun offenseChoice ()
     (+ 1 (random *numCols*)))
 
@@ -270,7 +272,9 @@
       ((or
 	(and (eq *roboPlayer* 1) *player1Goes*)
 	(and (eq *roboPlayer* 2) (not *player1Goes*)))
-       (setf colChoice (askRobotForCol board)))
+       (progn
+	 (setf colChoice (askRobotForCol board))
+	 (format t "Robbie plays column ~D~%" colChoice)))
       ;; user's turn
       (t (setf colChoice (askUserForCol))))
   
