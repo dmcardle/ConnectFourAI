@@ -75,29 +75,44 @@
                 (format t "~%")))))
 
 
-(defun makeMove (board colNum)
+(defun getColumn (board colNum)
+ "get column `colNum` from `board`"
+ (reverse
+  (map 'list #'(lambda (row) (nth colNum row)) board)))
+
+(defun highestEmptyPos (col)
+ "find the height at which to put a new piece"
+ (position '~ col))
+
+(defun colFull (col)
+ "is the given column full?"
+ (null (highestEmptyPos col)))
+
+
+(defun makeMove (board colNum simulate)
+    "Make a move on the given board in the given column. If `simulate` is T, we~
+    will return 'FULL if column is full. Otherwise, we will notify the user~
+    that the column is full and ask for a new column."
     ;; decide which symbol to use
     (setf sym (cond
-        (*player1Goes* 'O)
-        (t 'X)))
+        (*player1Goes* 'X)
+        (t 'O)))
 
-    ;; adjust for numbers displayed to user starting at 1
-    (setf colNum (- colNum 1))
-    
     ;; extract column from board
-    (setf col
-        (reverse
-            (map 'list #'(lambda (row) (nth colNum row)) board)))
+    (setf col (getColumn board colNum))
     
     ;; find highest empty element in column
-    (setf rowNum (position '~ col))
+    (setf rowNum (highestEmptyPos col))
 
     ;; set the value at the position
     (if (null rowNum)
-        (progn
+        (if simulate
+            'FULL
+            (progn        
+                
             ;; if col is full, repeat without switching to other player's turn
             (format t "Column is full~%")
-            (takeTurn board))
+            (takeTurn board)))
 
         ;; else
         (progn
@@ -178,9 +193,9 @@
         (> val 0)
         (<= val *numCols*))
       (progn
-	;; other player's turn now
-	(setf *player1Goes* (not *player1Goes*))
-	val)
+        ;; other player's turn now
+        ;;(setf *player1Goes* (not *player1Goes*))
+        (- val 1))
 
     ;; otherwise
        (progn
@@ -201,22 +216,24 @@
       (setf sandbox (mapcar #'copy-list board))
 
       ;; if we are not testing row 0
-      (if (not (eq n 0))
+      (if (not (eq n -1))
 	  (progn
 	    
-	    (makeMove sandbox n)
+	    (makeMove sandbox n T)
 	    
 	    (setf gameOverP (checkGameOver sandbox))
 	    
 	    ;; if the game is not a draw and this move ended the game
 	    (if (and (not (eq gameOverP 'DRAW)) gameOverP)
-		;; return this column
-		n
-		;; otherwise, try again on the next column
-		(winningCol (- n 1))))
+    		;; return this column
+            (progn
+                (format t "Steal~%")
+		        n)
+		    ;; otherwise, try again on the next column
+    		(winningCol (- n 1))))
 
 	  ;; otherwise, admit that we don't know what to do
-	  0))
+	  -1))
     
     (winningCol *numCols*))
 
@@ -227,31 +244,36 @@
 
 
   ;; switch move to other player, make moves on pretend board as him
-  ;; this will have to be done anyway and it allows us to pretend the other player is moving
-  (setf *player1Goes* (not *player1Goes*))
-
   ;; check for winning move for other player
+  ;; switch move back to us to leave the variable the way we found it
+  (setf *player1Goes* (not *player1Goes*))
   (setf blockingMove (findWinningCol))
-
+  (setf *player1Goes* (not *player1Goes*))
 
   ;;                           O F F E N S E
   ;;    plan for victory
   ;; 
   ;; TODO implement Victor Allis' rules for perfect play
-
-  ;; TODO make this check if the column is full
   (defun offenseChoice ()
-    (+ 1 (random *numCols*)))
+    (format t "Offense~%")
+    (setf choice (random *numCols*))
+    (cond
+      ((not (colFull (getColumn board choice)))
+        choice)
+      (t
+        (offenseChoice))))
 
+
+    
 
 
   (cond
     ;; first choice is the winning move for us, if it exists
-    ((not (eq immediateWin 0))
+    ((not (eq immediateWin -1))
       immediateWin)
 
     ;; otherwise, best choice is the move that prevents other player from winning
-    ((not (eq blockingMove 0))
+    ((not (eq blockingMove -1))
      blockingMove)
     
     ;; there's no way to win or screw the other guy, time for OFFENSE strategy
@@ -267,18 +289,24 @@
 
     (printBoard board)
 
+
+
     (cond
       ;; robot's turn
       ((or
-	(and (eq *roboPlayer* 1) *player1Goes*)
-	(and (eq *roboPlayer* 2) (not *player1Goes*)))
-       (progn
-	 (setf colChoice (askRobotForCol board))
-	 (format t "Robbie plays column ~D~%" colChoice)))
-      ;; user's turn
-      (t (setf colChoice (askUserForCol))))
+        (and (eq *roboPlayer* 1) *player1Goes*)
+        (and (eq *roboPlayer* 2) (not *player1Goes*)))
+           (progn
+             (setf colChoice (askRobotForCol board))
+             (format t "Robbie plays column ~D~%" (+ 1 colChoice))))
+
+      ;; user's turn, subtract one from user's input
+      (t (setf colChoice (askUserForCol) )))
   
-    (makeMove board colChoice)
+    (makeMove board colChoice NIL)
+    ;; other player's turn now
+    (setf *player1Goes* (not *player1Goes*))
+
 
     ;; recurse
     (setf gameStatus (checkGameOver board))
@@ -314,6 +342,10 @@
 
 
 (defun main ()
+
+  ;; seed the random number generator
+  (setf *random-state* (make-random-state t))
+
   (format t "~%~%     SETUP~%~%")
   (decideRobot)
 
