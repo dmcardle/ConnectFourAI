@@ -223,22 +223,22 @@
 	    
 	    (setf gameOverP (checkGameOver sandbox))
 	    
-	    ;; if the game is not a draw and this move ended the game
+	    ; if the game is not a draw and this move ended the game
 	    (if (and (not (eq gameOverP 'DRAW)) gameOverP)
     		;; return this column
-            (progn
-                (format t "Steal~%")
-		        n)
-		    ;; otherwise, try again on the next column
+		(progn
+		  (format t "[Steal]~%")
+		  n)
+		    ; otherwise, try again on the next column
     		(winningCol (- n 1))))
 
-	  ;; otherwise, admit that we don't know what to do
+	  ; otherwise, admit that we don't know what to do
 	  -1))
     
     (winningCol *numCols*))
 
 
-  ;; check for winning move for us
+  ; check for winning move for us
   (setf immediateWin (findWinningCol))  
 
 
@@ -250,20 +250,155 @@
   (setf blockingMove (findWinningCol))
   (setf *player1Goes* (not *player1Goes*))
 
-  ;;                           O F F E N S E
-  ;;    plan for victory
-  ;; 
-  ;; TODO implement Victor Allis' rules for perfect play
-  (defun offenseChoice ()
-    (format t "Offense~%")
+  ;;;                           O F F E N S E
+
+  ;;; choose a random non-full column
+  (defun offenseChoiceRand ()
+    (format t "[Offense]~%")
     (setf choice (random *numCols*))
     (cond
       ((not (colFull (getColumn board choice)))
         choice)
       (t
-        (offenseChoice))))
+        (offenseChoiceRand))))
 
 
+
+  ;;; TODO implement Victor Allis' rules for perfect play
+  (defun VICTOR ()
+    
+
+    ;;; CLAIMEVEN
+    ;;;
+    ;;; Required:   Two squares, directly above each other. Both squares should
+    ;;;             be empty. The upper square must be even.
+    ;;;
+    ;;; Solutions:  All groups which contain the upper square.
+    (defun claimeven ()
+    )
+
+
+    ;;; BASEINVERSE 
+    ;;;
+    ;;; Required:   Two directly playable squares.
+    ;;;
+    ;;; Solutions:  All groups which contain both squares.
+    (defun baseinverse ()
+    )
+
+    ;;; VERTICAL 
+    ;;;
+    ;;; Required:   Two squares directly above each other. Both squares should
+    ;;;             be empty. The upper square must be odd. 
+    ;;;
+    ;;; Solutions:  All groups which contain both squares. 
+    (defun vertical ()
+    )
+
+    ;;; AFTEREVEN 
+    ;;;
+    ;;; Required:   A group which can be completed by the controller of the
+    ;;;             Zugzwang, using only the even squares of a set of
+    ;;;             Claimevens. This group is called the Aftereven group. The
+    ;;;             columns in which the empty squares lie are called the
+    ;;;             Aftereven columns.
+    ;;;
+    ;;; Solutions:  All groups which have at least one square in all Aftereven
+    ;;;             columns, above the empty square of the Aftereven group in
+    ;;;             that column. All groups which are solved by the Claimevens,
+    ;;;             which are part of the Aftereven. 
+    (defun aftereven ()
+    )
+
+
+    ;;; LOWINVERSE 
+    ;;;
+    ;;; Required:   Two different columns, called the Lowinverse columns. In
+    ;;;             each Lowinverse column two squares, lying directly above
+    ;;;             each other.
+    ;;;             All four squares must be empty.
+    ;;;             In both columsn the upper of the two squares is odd.
+    ;;;
+    ;;; Solutions:  All groups which contain both upper squares.
+    ;;;             All groups which are solved by the Verticals, which are
+    ;;;             part of the Lowinverse.
+    (defun lowinverse ()
+    )
+    
+    ;;; HIGHINVERSE 
+    ;;;
+    ;;; Required:   Two different columns, called the Highinverse columns. In
+    ;;;             each Highinverse column three squares, lying directly above
+    ;;;             each other.
+    ;;;             All six squares are empty.
+    ;;;             In both columns the upper square is even. 
+    ;;;
+    ;;; Solutions: 
+    ;;;             All groups which contain the two upper squares.
+    ;;;             All groups which contain the two middle squares.
+    ;;;             All (vertical) groups which contain the two highest squares
+    ;;;             of one of the Highinverse columns.
+    ;;;
+    ;;;             If the lower square of the first column is directly
+    ;;;             playable:
+    ;;;             All groups which contain both the lower square of the first
+    ;;;             column and the upper square of the second column.
+    ;;;
+    ;;;             If the lower square of the second column is directly
+    ;;;             playable:
+    ;;;             All groups which contain both the lower square of the
+    ;;;             second column and the upper square of the first column.
+    (defun highinverse ()
+    )
+
+    ;;; BASECLAIM 
+    ;;;
+    ;;; Required:   Three directly playable squares and the square above the
+    ;;;             second playable square. The non-playable square must be
+    ;;;             even. 
+    ;;;
+    ;;; Solutions:  All groups which contain the first playable square and the
+    ;;;             square above the second playable square.
+    ;;;             All groups which contain the second and third playable
+    ;;;             square. 
+    (defun baseclaim ()
+    )
+
+
+    ;;; BEFORE
+    ;;;
+    ;;; Required:   A group without men of the opponent, which is called the
+    ;;;             Before group.
+    ;;;             All empty squares of the Before group should not lie in the
+    ;;;             upper row of the board.  
+    ;;;
+    ;;; Solutions:  All groups which contain all squares which are successors
+    ;;;             of empty squares in the Before group.
+    ;;;             All groups which are solved by the Verticals which are part
+    ;;;             of the Before. All groups which are solved by the
+    ;;;             Claimevens which are part of the Before. 
+    (defun before ()
+    )
+
+
+    ;;; SPECIALBEFORE
+    ;;;
+    ;;; Required:   A group without men of the opponent, which is called the
+    ;;;             Specialbefore group.
+    ;;;             A directly playable square in another column.
+    ;;;             All empty squares of the Specialbefore group should not lie
+    ;;;             in the upper row of the board. One empty square of the
+    ;;;             Before group must be playable. 
+    ;;;
+    ;;; Solutions:  All groups which contain all successors of empty squares of
+    ;;;             the Specialbefore group and the extra playable square.
+    ;;;             All groups which contain the two playable squares.
+    ;;;             All groups which are solved by one of the Claimevens.
+    ;;;             All groups which are solved by one of the Verticals.
+    (defun specialbefore ()
+    )
+
+  )
     
 
 
@@ -277,7 +412,7 @@
      blockingMove)
     
     ;; there's no way to win or screw the other guy, time for OFFENSE strategy
-    (t (offenseChoice))))
+    (t (offenseChoiceRand))))
 
 (defun takeTurn (board )
 
