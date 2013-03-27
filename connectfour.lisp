@@ -151,13 +151,24 @@
                 (checkList (car b))
                 (checkHorizontal (cdr b)))))
             
-    (defun checkVertical (b)
-        "checks each column of board b"
-        (if (not (null (car b)))
-            (or
-                (checkList (map 'list #'car b))
-                (checkVertical (map 'list #'cdr b))))) 
+    ;(defun checkVertical (b)
+    ;    "checks each column of board b"
+    ;    (if (not (null (car b)))
+    ;        (or
+    ;            (checkList (map 'list #'car b))
+    ;            (checkVertical (map 'list #'cdr b))))) 
 
+    (defun checkVertical (b)
+        (checkHorizontal (transpose b)))
+
+    (defun transpose (board)
+        (cond
+            ((eq (length (car board)) 0)
+                NIL)
+            (t
+                (cons
+                    (mapcar #'car board)
+                    (transpose (mapcar #'cdr board)) ))))
 
     (defun checkForDraw (b)
         "returns true if board is full"
