@@ -279,14 +279,12 @@
            (setf sandbox (copyBoard board))
            (setf tryMove (makeMove sandbox c p1go T))
 
-           ;(format t "thinkAhead ~S~%" n)
-           ;(printBoard sandbox)
-         
            (cond
             ;; column is full -- dead end, so its score is zero
             ((eq tryMove 'FULL)
              (progn
-              (format t "column was full~%")))
+              ;(format t "column was full~%")
+              ))
 
             (t ;; if we didn't hit a dead end
 
@@ -294,11 +292,17 @@
                (setf gameOverStatus (checkGameOver sandbox))
              (cond
               ;; if game is over, this column is a success, so its score is one
-              ((and (not (eq gameOverStatus 'DRAW)) gameOverStatus)
+              ((and
+                (not (eq gameOverStatus 'DRAW))
+                gameOverStatus
+                ;(or 
+                ;  (and (eq *roboPlayer* 1) p1go)
+                ;  (and (eq *roboPlayer* 2) (not p1go)))
+                )
                 
                (progn
-                (format t "game is over and robot won!~%")
-                (printBoard sandbox)
+                ;(format t "game is over and robot won!~%")
+                ;(printBoard sandbox)
                 (setf (nth tryCol moves) (+ 1 (nth tryCol moves)))))
 
               ;; if game is not over, switch to next player and recurse on this sandbox
