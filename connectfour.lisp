@@ -51,14 +51,14 @@
                 ((eq (car row) '~)
                     (format t "~C[00m| - " #\Esc))
                 (t
-		 ;(format t "| ~S " (car row))
-		 (cond
-		   ((eq (car row) 'X)
-		    (format t "~C[00m| ~C[33mX " #\Esc #\Esc))
-		   ((eq (car row) 'O)
-		    (format t "~C[00m| ~C[31mO " #\Esc #\Esc))
-		   (t (format t "~C[00m| ~S " #\Esc (car row))))
-		 ))
+         ;(format t "| ~S " (car row))
+         (cond
+           ((eq (car row) 'X)
+            (format t "~C[00m| ~C[33mX " #\Esc #\Esc))
+           ((eq (car row) 'O)
+            (format t "~C[00m| ~C[31mO " #\Esc #\Esc))
+           (t (format t "~C[00m| ~S " #\Esc (car row))))
+         ))
             (printRow (cdr row))))))
 
 
@@ -89,13 +89,13 @@
  (null (highestEmptyPos col)))
 
 
-(defun makeMove (board colNum simulate)
+(defun makeMove (board colNum player1goes simulate)
     "Make a move on the given board in the given column. If `simulate` is T, we~
     will return 'FULL if column is full. Otherwise, we will notify the user~
     that the column is full and ask for a new column."
     ;; decide which symbol to use
     (setf sym (cond
-        (*player1Goes* 'X)
+        (player1Goes 'X)
         (t 'O)))
 
     ;; extract column from board
@@ -108,16 +108,17 @@
     (if (null rowNum)
         (if simulate
             'FULL
-            (progn        
-                
-            ;; if col is full, repeat without switching to other player's turn
-            (format t "Column is full~%")
-            (takeTurn board)))
-
-        ;; else
+            
+        ;; otherwise
         (progn
-            (setf rowNum (- (- *numRows* rowNum) 1)) 
-            (setf (nth colNum (nth rowNum board)) sym))))
+          ;; if col is full, repeat without switching to other player's turn
+          (format t "Column is full~%")
+          (takeTurn board)))
+
+    ;; else
+    (progn
+     (setf rowNum (- (- *numRows* rowNum) 1)) 
+     (setf (nth colNum (nth rowNum board)) sym))))
 
 
 (defun checkGameOver (board)
@@ -204,51 +205,48 @@
 
 (defun askRobotForCol (board)
 
+  (defun copyBoard (b)
+    (mapcar #'copy-list b))
+
   ;;                           D E F E N S E
   ;;    take the move that will make us win
   ;;        OR
   ;;    take the move that will prevent the other player from winning
-  (defun findWinningCol ()
+  (defun findWinningCol (player1goes)
     "For each column, move there and see if the game ends in a win"
 
     (defun winningCol (n)
       ;; create a copy of the current board to experiment on
-      (setf sandbox (mapcar #'copy-list board))
+      (setf sandbox (copyBoard board))
 
       ;; if we are not testing row 0
       (if (not (eq n -1))
-	  (progn
-	    
-	    (makeMove sandbox n T)
-	    
-	    (setf gameOverP (checkGameOver sandbox))
-	    
-	    ; if the game is not a draw and this move ended the game
-	    (if (and (not (eq gameOverP 'DRAW)) gameOverP)
-    		;; return this column
-		(progn
-		  (format t "[Steal]~%")
-		  n)
-		    ; otherwise, try again on the next column
-    		(winningCol (- n 1))))
+        (progn
+        
+          (makeMove sandbox n player1goes T)
+        
+          (setf gameOverP (checkGameOver sandbox))
+        
+          ; if the game is not a draw and this move ended the game
+          (if (and (not (eq gameOverP 'DRAW)) gameOverP)
+            ;; return this column
+            (progn
+              (format t "[Steal]~%")
+              n)
+            ; otherwise, try again on the next column
+            (winningCol (- n 1))))
 
-	  ; otherwise, admit that we don't know what to do
-	  -1))
+      ; otherwise, admit that we don't know what to do
+      -1))
     
     (winningCol *numCols*))
 
 
   ; check for winning move for us
-  (setf immediateWin (findWinningCol))  
+  (setf immediateWin (findWinningCol *player1goes*))  
 
-
-
-  ;; switch move to other player, make moves on pretend board as him
   ;; check for winning move for other player
-  ;; switch move back to us to leave the variable the way we found it
-  (setf *player1Goes* (not *player1Goes*))
-  (setf blockingMove (findWinningCol))
-  (setf *player1Goes* (not *player1Goes*))
+  (setf blockingMove (findWinningCol (not *player1goes*)))
 
   ;;;                           O F F E N S E
 
@@ -258,148 +256,101 @@
     (setf choice (random *numCols*))
     (cond
       ((not (colFull (getColumn board choice)))
-        choice)
+       choice)
       (t
         (offenseChoiceRand))))
 
 
+  (defun offenseChoiceThinkAhead ()
 
-  ;;; TODO implement Victor Allis' rules for perfect play
-  (defun VICTOR ()
-    
+    ;; Create a list where the integer at position i represents
+    ;; the number of nodes in the game tree which result in a win
+    ;; for the current player following a move in column i
+    (setf moves (map 'list #'(lambda (x) (* 0 x)) (range 0 *numCols*)))
 
-    ;;; CLAIMEVEN
-    ;;;
-    ;;; Required:   Two squares, directly above each other. Both squares should
-    ;;;             be empty. The upper square must be even.
-    ;;;
-    ;;; Solutions:  All groups which contain the upper square.
-    (defun claimeven ()
-    )
+    (defun thinkAhead (n board p1go tryCol)
+      (cond
+       ((> n 0) ;; we should recurse
+        (progn 
 
+         (loop for c in (range 0 *numCols*) do
+          (progn
+           ;; create a new copy of the board to try a move in column c
+           (setf sandbox (copyBoard board))
+           (setf tryMove (makeMove sandbox c p1go T))
 
-    ;;; BASEINVERSE 
-    ;;;
-    ;;; Required:   Two directly playable squares.
-    ;;;
-    ;;; Solutions:  All groups which contain both squares.
-    (defun baseinverse ()
-    )
+           ;(format t "thinkAhead ~S~%" n)
+           ;(printBoard sandbox)
+         
+           (cond
+            ;; column is full -- dead end, so its score is zero
+            ((eq tryMove 'FULL)
+             (progn
+              (format t "column was full~%")))
 
-    ;;; VERTICAL 
-    ;;;
-    ;;; Required:   Two squares directly above each other. Both squares should
-    ;;;             be empty. The upper square must be odd. 
-    ;;;
-    ;;; Solutions:  All groups which contain both squares. 
-    (defun vertical ()
-    )
+            (t ;; if we didn't hit a dead end
 
-    ;;; AFTEREVEN 
-    ;;;
-    ;;; Required:   A group which can be completed by the controller of the
-    ;;;             Zugzwang, using only the even squares of a set of
-    ;;;             Claimevens. This group is called the Aftereven group. The
-    ;;;             columns in which the empty squares lie are called the
-    ;;;             Aftereven columns.
-    ;;;
-    ;;; Solutions:  All groups which have at least one square in all Aftereven
-    ;;;             columns, above the empty square of the Aftereven group in
-    ;;;             that column. All groups which are solved by the Claimevens,
-    ;;;             which are part of the Aftereven. 
-    (defun aftereven ()
-    )
+             (progn
+               (setf gameOverStatus (checkGameOver sandbox))
+             (cond
+              ;; if game is over, this column is a success, so its score is one
+              ((and (not (eq gameOverStatus 'DRAW)) gameOverStatus)
+                
+               (progn
+                (format t "game is over and robot won!~%")
+                (printBoard sandbox)
+                (setf (nth tryCol moves) (+ 1 (nth tryCol moves)))))
 
+              ;; if game is not over, switch to next player and recurse on this sandbox
+              (t
+               (progn
+                
+                ;(format t "recurse for next move~%")
+                (thinkAhead (- n 1) sandbox (not p1go) tryCol)
+                ;(format t "~%n = ~S~%MOVES = ~S~%~%" n moves)
+                ))))))))))
+       ;; if we should not recurse any more
+       ;(t
+       ; (progn
+          ;(format t "end of the line~%")
+       ;   -1))
+       ))
 
-    ;;; LOWINVERSE 
-    ;;;
-    ;;; Required:   Two different columns, called the Lowinverse columns. In
-    ;;;             each Lowinverse column two squares, lying directly above
-    ;;;             each other.
-    ;;;             All four squares must be empty.
-    ;;;             In both columsn the upper of the two squares is odd.
-    ;;;
-    ;;; Solutions:  All groups which contain both upper squares.
-    ;;;             All groups which are solved by the Verticals, which are
-    ;;;             part of the Lowinverse.
-    (defun lowinverse ()
-    )
-    
-    ;;; HIGHINVERSE 
-    ;;;
-    ;;; Required:   Two different columns, called the Highinverse columns. In
-    ;;;             each Highinverse column three squares, lying directly above
-    ;;;             each other.
-    ;;;             All six squares are empty.
-    ;;;             In both columns the upper square is even. 
-    ;;;
-    ;;; Solutions: 
-    ;;;             All groups which contain the two upper squares.
-    ;;;             All groups which contain the two middle squares.
-    ;;;             All (vertical) groups which contain the two highest squares
-    ;;;             of one of the Highinverse columns.
-    ;;;
-    ;;;             If the lower square of the first column is directly
-    ;;;             playable:
-    ;;;             All groups which contain both the lower square of the first
-    ;;;             column and the upper square of the second column.
-    ;;;
-    ;;;             If the lower square of the second column is directly
-    ;;;             playable:
-    ;;;             All groups which contain both the lower square of the
-    ;;;             second column and the upper square of the first column.
-    (defun highinverse ()
-    )
+    (format t "THINKING...~%")
+    (loop for tryCol from 0 to (- *numCols* 1) do
+        
+        (progn
+         (setf sandbox (copyBoard board))
+         (makeMove sandbox tryCol (not *player1goes*) T)
 
-    ;;; BASECLAIM 
-    ;;;
-    ;;; Required:   Three directly playable squares and the square above the
-    ;;;             second playable square. The non-playable square must be
-    ;;;             even. 
-    ;;;
-    ;;; Solutions:  All groups which contain the first playable square and the
-    ;;;             square above the second playable square.
-    ;;;             All groups which contain the second and third playable
-    ;;;             square. 
-    (defun baseclaim ()
-    )
+         (format t "~S/~S~%" (+ 1 tryCol) *numCols*)
+         (thinkAhead 3 sandbox *player1goes* tryCol)))
+
+    (format t "THINKAHEAD ~S~%" moves)
+
+    ;; return a random column until thinkAhead works correctly
+    ;(offenseChoiceRand)
 
 
-    ;;; BEFORE
-    ;;;
-    ;;; Required:   A group without men of the opponent, which is called the
-    ;;;             Before group.
-    ;;;             All empty squares of the Before group should not lie in the
-    ;;;             upper row of the board.  
-    ;;;
-    ;;; Solutions:  All groups which contain all squares which are successors
-    ;;;             of empty squares in the Before group.
-    ;;;             All groups which are solved by the Verticals which are part
-    ;;;             of the Before. All groups which are solved by the
-    ;;;             Claimevens which are part of the Before. 
-    (defun before ()
-    )
+    (defun allPositions (needle haystack)
+      "Find the position of all occurrences of needle in haystack"
+      (defun searchFun (needle haystack pos)
+        (if (not (null haystack))
+          (cond
+            ((eq needle (car haystack))
+              (cons pos (searchFun needle (cdr haystack) (+ 1 pos))))
+            (t (searchFun needle (cdr haystack) (+ 1 pos))))))
 
+       (searchFun needle haystack 0))
 
-    ;;; SPECIALBEFORE
-    ;;;
-    ;;; Required:   A group without men of the opponent, which is called the
-    ;;;             Specialbefore group.
-    ;;;             A directly playable square in another column.
-    ;;;             All empty squares of the Specialbefore group should not lie
-    ;;;             in the upper row of the board. One empty square of the
-    ;;;             Before group must be playable. 
-    ;;;
-    ;;; Solutions:  All groups which contain all successors of empty squares of
-    ;;;             the Specialbefore group and the extra playable square.
-    ;;;             All groups which contain the two playable squares.
-    ;;;             All groups which are solved by one of the Claimevens.
-    ;;;             All groups which are solved by one of the Verticals.
-    (defun specialbefore ()
-    )
+    (setf bestCols (allPositions (reduce #'max moves) moves))
 
-  )
-    
+    (format t "BESTCOLS = ~S~%" bestCols)
+
+     
+    ;; choose a random element out of the bestCols list
+    (nth (random (length bestCols)) bestCols) )
+
 
 
   (cond
@@ -412,7 +363,7 @@
      blockingMove)
     
     ;; there's no way to win or screw the other guy, time for OFFENSE strategy
-    (t (offenseChoiceRand))))
+    (t (offenseChoiceThinkAhead))))
 
 (defun takeTurn (board )
 
@@ -438,7 +389,7 @@
       ;; user's turn, subtract one from user's input
       (t (setf colChoice (askUserForCol) )))
   
-    (makeMove board colChoice NIL)
+    (makeMove board colChoice *player1goes* NIL)
     ;; other player's turn now
     (setf *player1Goes* (not *player1Goes*))
 
@@ -455,8 +406,8 @@
             (progn
                 (format t "~%~%GAME OVER, ")
                 (if *player1Goes*
-                    (format t "PLAYER 2 WINS~%")
-                    (format t "PLAYER 1 WINS~%"))
+                    (format t "PLAYER 2 (O) WINS~%")
+                    (format t "PLAYER 1 (X) WINS~%"))
                 (printBoard board)))
         (t (takeTurn board))))
 
@@ -470,8 +421,8 @@
   (setf robbie (read))
   (if (not (and (>= robbie 0) (<= robbie 2)))
       (progn
-	(format t "--- Invalid input.  Enter either 0, 1, or 2~%")
-	(decideRobot))
+    (format t "--- Invalid input.  Enter either 0, 1, or 2~%")
+    (decideRobot))
       ;; otherwise
       (setf *roboPlayer* robbie)))
 
