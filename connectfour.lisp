@@ -487,7 +487,7 @@
 
   (format t "~%~%     LET THE GAMES BEGIN!~%~%")
   (setf board (createBoard *numCols* *numRows*))
-  (takeTurn board  (and (eq *roboPlayer* 1) *player1Goes*) ))
+  (takeTurn board NIL))
 
 
 (main)
