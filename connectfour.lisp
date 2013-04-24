@@ -113,7 +113,7 @@
         (progn
           ;; if col is full, repeat without switching to other player's turn
           (format t "Column is full~%")
-          (takeTurn board)))
+          (takeTurn board simulate)))
 
     ;; else
     (progn
@@ -279,6 +279,9 @@
            (setf sandbox (copyBoard board))
            (setf tryMove (makeMove sandbox c p1go T))
 
+           ;(format t "Trying ~S~%" c)
+           ;(printBoard sandbox)
+
            (cond
             ;; column is full -- dead end, so its score is zero
             ((eq tryMove 'FULL)
@@ -294,16 +297,23 @@
               ;; if game is over, this column is a success, so its score is one
               ((and
                 (not (eq gameOverStatus 'DRAW))
-                gameOverStatus
-                ;(or 
-                ;  (and (eq *roboPlayer* 1) p1go)
-                ;  (and (eq *roboPlayer* 2) (not p1go)))
-                )
+                gameOverStatus)
+
+                (cond 
+
+                  ((or 
+                    (and (eq *roboPlayer* 1)  p1go)
+                    (and (eq *roboPlayer* 2) (not p1go)))
                 
-               (progn
-                ;(format t "game is over and robot won!~%")
-                ;(printBoard sandbox)
-                (setf (nth tryCol moves) (+ 1 (nth tryCol moves)))))
+                   (progn
+                    ;(format t "game is over and robot won!~%")
+                    ;(printBoard sandbox)
+                    (setf (nth tryCol moves) (+ 1 (nth tryCol moves)))))
+
+                  (t
+                    (progn
+                      ;(format t "game is over and human won!~%")
+                      (setf (nth tryCol moves) (+ -1 (nth tryCol moves)))))))
 
               ;; if game is not over, switch to next player and recurse on this sandbox
               (t
@@ -359,7 +369,7 @@
 
     (setf bestCols (allPositions (reduce #'max moves) moves))
 
-    (format t "BESTCOLS = ~S~%" bestCols)
+    ;(format t "BESTCOLS = ~S~%" bestCols)
 
      
     ;; choose a random element out of the bestCols list
@@ -379,7 +389,7 @@
     ;; there's no way to win or screw the other guy, time for OFFENSE strategy
     (t (offenseChoiceThinkAhead))))
 
-(defun takeTurn (board )
+(defun takeTurn (board simulate)
 
     (format t
         (cond
@@ -409,21 +419,22 @@
 
 
     ;; recurse
-    (setf gameStatus (checkGameOver board))
+    (setf gameStatusOver (checkGameOver board))
 
     (cond
-        ((eq gameStatus 'DRAW)
+        ((eq gameStatusOver 'DRAW)
             (progn
                 (format t "~%~%DRAW: Nobody wins!~%~%"))
                 (printBoard board))
-        (gameStatus 
-            (progn
-                (format t "~%~%GAME OVER, ")
-                (if *player1Goes*
-                    (format t "PLAYER 2 (O) WINS~%")
-                    (format t "PLAYER 1 (X) WINS~%"))
-                (printBoard board)))
-        (t (takeTurn board))))
+        (gameStatusOver 
+            (if (not simulate)
+                (progn
+                    (format t "~%~%GAME OVER: ")
+                    (if *player1Goes*
+                        (format t "PLAYER 2 (O) WINS~%")
+                        (format t "PLAYER 1 (X) WINS~%"))
+                    (printBoard board))))
+        (t (takeTurn board simulate))))
 
 
 (defun decideRobot ()
@@ -451,7 +462,7 @@
 
   (format t "~%~%     LET THE GAMES BEGIN!~%~%")
   (setf board (createBoard *numCols* *numRows*))
-  (takeTurn board))
+  (takeTurn board  (and (eq *roboPlayer* 1) *player1Goes*) ))
 
 
 (main)
