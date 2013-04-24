@@ -187,6 +187,17 @@
 
 
 (defun askUserForCol ()
+
+  (format t "
+                    ||\\||
+                    |   |
+                    |_ _|
+                    | _ |
+                    | ^ |
+                     \\_/~%")
+
+
+
  (format t "Enter col num: ")
  (let ((val (read)))
   (if (and
