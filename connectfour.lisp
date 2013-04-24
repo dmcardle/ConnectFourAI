@@ -375,11 +375,27 @@
 
     (setf bestCols (allPositions (reduce #'max moves) moves))
 
+    (setf fullColumns (map 'list #'(lambda (c) (colFull (getColumn board c))) (range 0 *numCols* )))
+    (setf fullColumns (allPositions t fullColumns))
+
+    ;; remove the elements from bestCols which are full
+
+    ;(format t "FULLCOLS = ~S~%" fullColumns)
+
+    ;(format t "BESTCOLS = ~S~%" bestCols)
+
+    (loop for c in fullColumns do
+        (setf bestCols (remove c bestCols)))
+
     ;(format t "BESTCOLS = ~S~%" bestCols)
 
      
     ;; choose a random element out of the bestCols list
-    (nth (random (length bestCols)) bestCols) )
+    (cond
+        ((null bestCols)
+            (offenseChoiceRand))
+        (t
+          (nth (random (length bestCols)) bestCols))))
 
 
 
