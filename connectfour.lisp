@@ -320,17 +320,27 @@
        ;   -1))
        ))
 
-    (format t "THINKING...~%")
+    (format t"
+    ___ O
+ O-/   \\|
+  / ||| \\
+  |-----|
+ / ----- \\
+/|\\_____/|\\~%~%")
+
+    (format t "Robbie is T H I N K I N G~%          ")
     (loop for tryCol from 0 to (- *numCols* 1) do
         
         (progn
          (setf sandbox (copyBoard board))
-         (makeMove sandbox tryCol (not *player1goes*) T)
+         (makeMove sandbox tryCol *player1goes* T)
 
-         (format t "~S/~S~%" (+ 1 tryCol) *numCols*)
-         (thinkAhead 3 sandbox *player1goes* tryCol)))
+         ;(format t "~S/~S~%" (+ 1 tryCol) *numCols* )
+         (format t ". ")
+         (thinkAhead 3 sandbox (not *player1goes*) tryCol)))
 
-    (format t "THINKAHEAD ~S~%" moves)
+    (format t ".~%~%")
+    ;(format t "THINKAHEAD ~S~%" moves)
 
     ;; return a random column until thinkAhead works correctly
     ;(offenseChoiceRand)
