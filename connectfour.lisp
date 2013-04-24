@@ -71,7 +71,7 @@
                 (printBoard (cdr board))))
         (t
             (progn 
-                (printRow (list 1 2 3 4 5 6 7) )
+                (printRow (range 1 (+ 1 *numCols*))  )
                 (format t "~%")))))
 
 
@@ -113,7 +113,7 @@
         (progn
           ;; if col is full, repeat without switching to other player's turn
           (format t "Column is full~%")
-          (takeTurn board simulate)))
+          (takeTurn board NIL)))
 
     ;; else
     (progn
@@ -411,7 +411,7 @@
     ;; there's no way to win or screw the other guy, time for OFFENSE strategy
     (t (offenseChoiceThinkAhead))))
 
-(defun takeTurn (board simulate)
+(defun takeTurn (board verbose)
 
     (format t
         (cond
@@ -441,24 +441,24 @@
     (setf *player1Goes* (not *player1Goes*))
 
 
-    ;; recurse
     (setf gameStatusOver (checkGameOver board))
-
     (cond
-        ((eq gameStatusOver 'DRAW)
-            (if (not simulate)
+        ( (eq gameStatusOver 'DRAW)
+            (if verbose
               (progn
                 (format t "~%~%DRAW: Nobody wins!~%~%")))
                 (printBoard board))
-        (gameStatusOver 
-            (if (not simulate)
+
+        ( gameStatusOver 
+            (if verbose
                 (progn
                     (format t "~%~%GAME OVER: ")
                     (if *player1Goes*
                         (format t "PLAYER 2 (O) WINS~%")
                         (format t "PLAYER 1 (X) WINS~%"))
                     (printBoard board))))
-        (t (takeTurn board simulate))))
+        ;; recurse
+        ( T (takeTurn board T))))
 
 
 (defun decideRobot ()
@@ -487,7 +487,7 @@
 
   (format t "~%~%     LET THE GAMES BEGIN!~%~%")
   (setf board (createBoard *numCols* *numRows*))
-  (takeTurn board NIL))
+  (takeTurn board T))
 
 
 (main)
