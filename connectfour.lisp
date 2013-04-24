@@ -446,8 +446,9 @@
 
     (cond
         ((eq gameStatusOver 'DRAW)
-            (progn
-                (format t "~%~%DRAW: Nobody wins!~%~%"))
+            (if (not simulate)
+              (progn
+                (format t "~%~%DRAW: Nobody wins!~%~%")))
                 (printBoard board))
         (gameStatusOver 
             (if (not simulate)
