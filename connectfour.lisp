@@ -308,11 +308,17 @@
                    (progn
                     ;(format t "game is over and robot won!~%")
                     ;(printBoard sandbox)
+
+                    ;; when making move in tryCol helps the robot, add one to
+                    ;; tryCol's score
                     (setf (nth tryCol moves) (+ 1 (nth tryCol moves)))))
 
                   (t
                     (progn
                       ;(format t "game is over and human won!~%")
+
+                      ;; when making move in tryCol helps the human, subtract
+                      ;; one from tryCol's score
                       (setf (nth tryCol moves) (+ -1 (nth tryCol moves)))))))
 
               ;; if game is not over, switch to next player and recurse on this sandbox
