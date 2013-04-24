@@ -263,7 +263,6 @@
 
   ;;; choose a random non-full column
   (defun offenseChoiceRand ()
-    (format t "[Offense]~%")
     (setf choice (random *numCols*))
     (cond
       ((not (colFull (getColumn board choice)))
