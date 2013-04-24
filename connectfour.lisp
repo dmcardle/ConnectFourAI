@@ -300,7 +300,6 @@
                 gameOverStatus)
 
                 (cond 
-
                   ((or 
                     (and (eq *roboPlayer* 1)  p1go)
                     (and (eq *roboPlayer* 2) (not p1go)))
@@ -339,7 +338,7 @@
     (format t"
     ___ O
  O-/   \\|
-  / ||| \\
+  /|||||\\
   |-----|
  / ----- \\
 /|\\_____/|\\~%~%")
@@ -360,6 +359,7 @@
 
     ;; return a random column until thinkAhead works correctly
     ;(offenseChoiceRand)
+
 
 
     (defun allPositions (needle haystack)
