@@ -426,6 +426,7 @@
     (cond
       ;; robot's turn
       ((or
+        (eq *roboPlayer* 3)
         (and (eq *roboPlayer* 1) *player1Goes*)
         (and (eq *roboPlayer* 2) (not *player1Goes*)))
            (progn
@@ -464,11 +465,12 @@
   (format t "Choose which player is robot.~%~
    Enter 0 for human vs. human game.~%~
    Enter 1 for robot vs. human game.~%~
-   Enter 2 for human vs. robot game.~%::")
+   Enter 2 for human vs. robot game.~%~
+   Enter 3 for robot vs. robot game.~%::")
   (setf robbie (read))
-  (if (not (and (>= robbie 0) (<= robbie 2)))
+  (if (not (and (>= robbie 0) (<= robbie 3)))
       (progn
-    (format t "--- Invalid input.  Enter either 0, 1, or 2~%")
+    (format t "--- Invalid input.  Enter either 0, 1, 2, or 3~%")
     (decideRobot))
       ;; otherwise
       (setf *roboPlayer* robbie)))
