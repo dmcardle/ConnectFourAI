@@ -24,61 +24,109 @@
     (loop for i from bot to (- top 1) collect i))
 
 
+;(defun createBoard (cols rows)
+;    "Create a list of `rows` lists containng `cols` elements each"
+;
+;    (defun createRow (cols)
+;        (cond
+;            ((eq cols 0) NIL)
+;            (T (append (createRow (- cols 1)) (list '~ ) ))))
+;
+;    (cond
+;        ((eq rows 0) NIL)
+;        (T (append (createBoard cols (- rows 1))  (list (createRow cols)) ))))
+
 (defun createBoard (cols rows)
-    "Create a list of `rows` lists containng `cols` elements each"
-
-    (defun createRow (cols)
-        (cond
-            ((eq cols 0) NIL)
-            (T (append (createRow (- cols 1)) (list '~ ) ))))
-
-    (cond
-        ((eq rows 0) NIL)
-        (T (append (createBoard cols (- rows 1))  (list (createRow cols)) ))))
+    (make-array (list rows cols) :initial-element '~))
 
 
-(defun printRow (row)
-    "Print a single list (x0 x1 ... xn) like  | x0 | x1 | ... | xn |"
+;(defun printRow (row)
+;    "Print a single list (x0 x1 ... xn) like  | x0 | x1 | ... | xn |"
+;
+;    ;; printing using terminal colors
+;    ;; see http://wynnnetherland.com/journal/a-stylesheet-author-s-guide-to-terminal-colors
+;
+;    (cond
+;        ((null row)
+;            (format t "~C[00m|~%" #\Esc))
+;        (t (progn
+;            (cond
+;                ((eq (car row) '~)
+;                    (format t "~C[00m| - " #\Esc))
+;                (t
+;         ;(format t "| ~S " (car row))
+;         (cond
+;           ((eq (car row) 'X)
+;            (format t "~C[00m| ~C[33mX " #\Esc #\Esc))
+;           ((eq (car row) 'O)
+;            (format t "~C[00m| ~C[31mO " #\Esc #\Esc))
+;           (t (format t "~C[00m| ~S " #\Esc (car row))))
+;         ))
+;            (printRow (cdr row))))))
+
+
+;(defun printBoard (board)
+;    "Print the whole board out using `printRow`"
+;    (cond
+;        ((not (eq (length board) 0))
+;            (progn
+;                (printRow (car board))
+;                (printBoard (cdr board))))
+;        (t
+;            (progn 
+;                (printRow (range 1 (+ 1 *numCols*))  )
+;                (format t "~%")))))
+
+(defun printBoard (board)
 
     ;; printing using terminal colors
     ;; see http://wynnnetherland.com/journal/a-stylesheet-author-s-guide-to-terminal-colors
+    (defun printPiece( p )
+        (cond
+            ((eq p '~)
+                (format t "~C[00m| - " #\Esc))
+            ((eq p 'X)
+                (format t "~C[00m| ~C[33mX " #\Esc #\Esc))
+            ((eq p 'O)
+                (format t "~C[00m| ~C[31mO " #\Esc #\Esc))))
 
-    (cond
-        ((null row)
-            (format t "~C[00m|~%" #\Esc))
-        (t (progn
-            (cond
-                ((eq (car row) '~)
-                    (format t "~C[00m| - " #\Esc))
-                (t
-         ;(format t "| ~S " (car row))
-         (cond
-           ((eq (car row) 'X)
-            (format t "~C[00m| ~C[33mX " #\Esc #\Esc))
-           ((eq (car row) 'O)
-            (format t "~C[00m| ~C[31mO " #\Esc #\Esc))
-           (t (format t "~C[00m| ~S " #\Esc (car row))))
-         ))
-            (printRow (cdr row))))))
+    ;; print the elements in the board
+    (dotimes (i *numRows*)
+        (dotimes (j *numCols*)
+            (printPiece (aref board i j)))
+        (format t "|~%"))
+    
+    ;; print the column numbers at the bottom
+    (defun printColNums (start i end)
+
+        (cond ((eq i start)
+            (format t "|")))
+        
+        (format t " ~S |" i)
+            
+        (cond ((eq i end)
+            (format t "~%")))
+        
+        (cond ((< i end)    
+            (printColNums start (+ 1 i) end))))
+
+        
+    (printColNums 1 1 *numCols*))
 
 
-(defun printBoard (board)
-    "Print the whole board out using `printRow`"
-    (cond
-        ((not (eq (length board) 0))
-            (progn
-                (printRow (car board))
-                (printBoard (cdr board))))
-        (t
-            (progn 
-                (printRow (range 1 (+ 1 *numCols*))  )
-                (format t "~%")))))
+
+
+
+;(defun getColumn (board colNum)
+; "get column `colNum` from `board`"
+; (reverse
+;  (map 'list #'(lambda (row) (nth colNum row)) board)))
 
 
 (defun getColumn (board colNum)
- "get column `colNum` from `board`"
- (reverse
-  (map 'list #'(lambda (row) (nth colNum row)) board)))
+    "get column `colNum` from `board`"
+    (map 'list #'(lambda (row) (aref board colNum row)) (range 0 *numRows*)))
+
 
 (defun highestEmptyPos (col)
  "find the height at which to put a new piece"
@@ -118,7 +166,8 @@
     ;; else
     (progn
      (setf rowNum (- (- *numRows* rowNum) 1)) 
-     (setf (nth colNum (nth rowNum board)) sym))))
+     ;(setf (nth colNum (nth rowNum board)) sym)
+     (setf (aref board colNum rowNum) sym))))
 
 
 (defun checkGameOver (board)
@@ -132,53 +181,114 @@
                     (equal seq '(O O O O))
                     (checkList (cdr l))))))
 
-    (defun checkDiagonal (b)
-        "checks all downward diagonals for groups of four"
-        (if (and
-             (>= (length b) 4)
-             (>= (length (car b)) 4))
-                (or
-                    (checkList
-                        (map 'list #'(lambda (i) (nth i (nth i b))) (range 0 4)))
-                    (checkDiagonal (cdr b))
-                    (checkDiagonal (map 'list #'cdr b)))))
-
-            ;(map 'list #'(lambda (row) (nth colNum row)) board)))
-
-    (defun checkHorizontal (b)
-        "checks each row of board b"
-        (if (not (null b))
-            (or
-                (checkList (car b))
-                (checkHorizontal (cdr b)))))
-            
-    (defun checkVertical (b)
-        "checks each column of board b"
-        (if (not (null (car b)))
-            (or
-                (checkList (map 'list #'car b))
-                (checkVertical (map 'list #'cdr b))))) 
+    ;(defun checkDiagonal (b)
+    ;    "checks all downward diagonals for groups of four"
+    ;    (if (and
+    ;         (>= (length b) 4)
+    ;         (>= (length (car b)) 4))
+    ;            (or
+    ;                (checkList
+    ;                    (map 'list #'(lambda (i) (nth i (nth i b))) (range 0 4)))
+    ;                (checkDiagonal (cdr b))
+    ;                (checkDiagonal (map 'list #'cdr b)))))
 
 
-    (defun checkForDraw (b)
-        "returns true if board is full"
+    (defun checkFourInDiag (i j direction sym)
+
+        (setf cVals (range i (+ i 4)))
+        (setf rVals (range j (+ j 4)))
+
         (cond
-            ((not (null b))
-                (and
-                    ;; if this row is full
-                    (null (position '~ (car b)))
-                    (checkForDraw (cdr b))))
-            (t t)))
+            ((eq direction 'pos)
+                (setf rVals (map 'list #'(lambda (x) (- *numRows* x)) rVals))))
+
+        (defun check (cVals rVals)
+            (cond
+                ((not (null cVals))
+                    (and 
+                        (eq sym (aref board (car cVals) (car rVals)))
+                        (check (cdr cVals) (cdr rVals))))))
+
+        (check cVals rVals))
+
+
+    (defun checkDiagonal ()
+        (defun check (i j)
+            (cond
+                ((and (< i (- *numRows* 4)) (< j (- *numCols* 4)))
+                    (or
+                        (checkFourInDiag i j 'pos 'O)
+                        (checkFourInDiag i j 'pos 'X)
+                        (checkFourInDiag i j 'neg 'O)
+                        (checkFourInDiag i j 'neg 'X)
+                        (check (+ 1 i) j)
+                        (check i (+ 1 j))))))
+        (check 0 0))
+            
+        
+
+     
+    (defun checkFourInRow (i j sym)
+        (and
+            (eq sym (aref board i j))
+            (eq sym (aref board i (+ 1 j)))
+            (eq sym (aref board i (+ 2 j)))
+            (eq sym (aref board i (+ 3 j)))))
+
+    (defun checkFourInCol (i j sym)
+        (and
+            (eq sym (aref board i j))
+            (eq sym (aref board (+ 1 i) j))
+            (eq sym (aref board (+ 2 i) j))
+            (eq sym (aref board (+ 3 i) j))))
+
+
+    (defun checkFour (#'func rows cols)
+        ;; supply either checkFourInRow or checkFourInCol as func
+
+        (defun check (i j)
+            (or 
+                (funcall #'func i j 'O)
+                (funcall #'func i j 'X)
+
+                (cond
+                    ((and (< i *numRows*) (< j (- *numCols* 4)))                
+                        (check (+ 1 i) (+ 1 j)) )
+
+                    (t NIL))))
+
+        (check 0 0))
+                    
+     
+    (defun checkHorizontal ()
+        (checkFour #'checkFourInRow *numRows* (- *numCols* 4)))
+
+    (defun checkVertical ()
+        (checkFour #'checkFourInCol (- *numRows* 4) *numCols*))
+
+    (defun checkForDraw ()
+        "board is full if all the elements in the top row are full"
+        (defun check (col)
+            (cond
+                ((< col *numCols*)
+                    (and
+                        (not (eq '~ (aref board col 0)))
+                        (check (+ 1 col))))
+                (T T)))
+        
+        (check 0))
+                
+
 
 
     (cond
-        ((checkForDraw board) 'DRAW)
+        ((checkForDraw) 'DRAW)
         (t 
 
             ;; check all types of winning conditions
             (or
-                (checkHorizontal board)
-                (checkVertical board)
+                (checkHorizontal)
+                (checkVertical)
                 (checkDiagonal board)
 
                 ;; also check horizontally-flipped board so we catch the upward
