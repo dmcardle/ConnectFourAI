@@ -16,7 +16,7 @@
 (defvar *roboPlayer* -1) ;; which player is robot?
 (defvar *numRows* 6)
 (defvar *numCols* 7)
-
+(defvar *thinkAheadMoves* 5)
 
 (defun range (bot top)
     "Generates a list of numbers in range [bot top) -- that is, bot is
@@ -362,7 +362,7 @@
 
          ;(format t "~S/~S~%" (+ 1 tryCol) *numCols* )
          (format t ". ")
-         (thinkAhead 3 sandbox (not *player1goes*) tryCol)))
+         (thinkAhead (- *thinkAheadMoves* 1) sandbox (not *player1goes*) tryCol)))
 
     (format t ".~%~%")
     ;(format t "THINKAHEAD ~S~%" moves)
