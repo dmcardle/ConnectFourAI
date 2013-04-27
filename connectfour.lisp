@@ -328,7 +328,7 @@
 
                       ;; when making move in tryCol helps the human, subtract
                       ;; one from tryCol's score
-                      (setf (nth tryCol moves) (- (nth tryCol moves) n ))))))
+                      (setf (nth tryCol moves) (- (nth tryCol moves) (* 2 n) ))))))
 
               ;; if game is not over, switch to next player and recurse on this sandbox
               (t
